@@ -1,66 +1,99 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
 
-export default function Home() {
+import { Button, Card, Col, Row, Space, Tag } from "antd";
+import Link from "next/link";
+
+export default function HomePage() {
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <main
+      style={{
+        minHeight: "100vh",
+        background: "var(--app-bg)",
+        padding: "48px 24px",
+      }}
+    >
+      <section
+        style={{
+          maxWidth: 1100,
+          margin: "0 auto",
+          textAlign: "center",
+        }}
+      >
+        <Tag color="blue" style={{ marginBottom: 16 }}>
+          QR Kodlu Etkinlik Katılım Sistemi
+        </Tag>
+
+        <h1
+          style={{
+            fontSize: 44,
+            marginBottom: 16,
+            color: "var(--app-text)",
+          }}
+        >
+          EventPass
+        </h1>
+
+        <p
+          style={{
+            maxWidth: 680,
+            margin: "0 auto 32px",
+            fontSize: 18,
+            color: "var(--app-muted)",
+            lineHeight: 1.6,
+          }}
+        >
+          Etkinliklere kolayca kayıt ol, sana özel QR kodlu biletini oluştur ve
+          etkinlik günü QR kod ile hızlı katılım sağla.
+        </p>
+
+        <Space size="middle" wrap>
+          <Link href="/events">
+            <Button type="primary" size="large">
+              Etkinlikleri Gör
+            </Button>
+          </Link>
+
+          <Link href="/register">
+            <Button size="large">Kayıt Ol</Button>
+          </Link>
+        </Space>
+      </section>
+
+      <section
+        style={{
+          maxWidth: 1100,
+          margin: "48px auto 0",
+        }}
+      >
+        <Row gutter={[24, 24]}>
+          <Col xs={24} md={8}>
+            <Card title="Etkinlikleri Keşfet" style={{ height: "100%" }}>
+              <p>
+                Yayındaki etkinlikleri görüntüleyebilir, detaylarını inceleyebilir
+                ve katılmak istediğin etkinliği seçebilirsin.
+              </p>
+            </Card>
+          </Col>
+
+          <Col xs={24} md={8}>
+            <Card title="QR Biletini Al" style={{ height: "100%" }}>
+              <p>
+                Etkinliğe kayıt olduktan sonra sana özel QR kodlu bilet
+                oluşturulur. Bu bileti etkinlik girişinde kullanırsın.
+              </p>
+            </Card>
+          </Col>
+
+          <Col xs={24} md={8}>
+            <Card title="Hızlı Katılım" style={{ height: "100%" }}>
+              <p>
+                Etkinlik günü görevli kişi QR kodunu okutarak katılımını hızlıca
+                onaylar.
+              </p>
+            </Card>
+          </Col>
+        </Row>
+      </section>
+    </main>
   );
 }
