@@ -7,104 +7,106 @@ import RoleGuard from "../../components/RoleGuard";
 export default function AdminPage() {
   return (
     <RoleGuard allowedRoles={["admin"]}>
-    <main
-      style={{
-        minHeight: "100vh",
-        backgroundColor: "var(--app-bg)",
-        padding: "32px 24px",
-      }}
-    >
-      <section
+      <main
         style={{
-          maxWidth: 1100,
-          margin: "0 auto 32px",
-          textAlign: "center",
+          minHeight: "calc(100vh - 68px)",
+          backgroundColor: "var(--app-bg)",
+          padding: "28px 24px",
         }}
       >
-        <h1 style={{ fontSize: 36, marginBottom: 8 }}>Admin Paneli</h1>
+        <section
+          style={{
+            maxWidth: 1100,
+            margin: "0 auto",
+          }}
+        >
+          <div
+            style={{
+              textAlign: "center",
+              marginBottom: 24,
+            }}
+          >
+            <h1
+              style={{
+                fontSize: 38,
+                margin: "0 0 8px",
+                color: "var(--app-text)",
+              }}
+            >
+              Admin Paneli
+            </h1>
 
-        <p style={{ color: "var(--app-muted)", fontSize: 16 }}>
-          Etkinlikleri yönetebilir, katılımcıları görebilir ve QR doğrulama
-          yapabilirsin.
-        </p>
-      </section>
+            <p
+              style={{
+                color: "var(--app-muted)",
+                fontSize: 16,
+                margin: 0,
+              }}
+            >
+              Etkinlikleri yönetebilir, katılımcıları görebilir ve QR doğrulama
+              yapabilirsin.
+            </p>
+          </div>
 
-      <section style={{ maxWidth: 1100, margin: "0 auto 32px" }}>
-        <Row gutter={[24, 24]}>
-          <Col xs={24} md={8}>
-            <Card>
-              <Statistic title="Toplam Etkinlik" value={3} />
-            </Card>
-          </Col>
+          <Row gutter={[20, 20]} style={{ marginBottom: 20 }}>
+            <Col xs={24} md={8}>
+              <Card style={{ borderRadius: 14 }}>
+                <Statistic title="Toplam Etkinlik" value={3} />
+              </Card>
+            </Col>
 
-          <Col xs={24} md={8}>
-            <Card>
-              <Statistic title="Toplam Kayıt" value={128} />
-            </Card>
-          </Col>
+            <Col xs={24} md={8}>
+              <Card style={{ borderRadius: 14 }}>
+                <Statistic title="Toplam Kayıt" value={128} />
+              </Card>
+            </Col>
 
-          <Col xs={24} md={8}>
-            <Card>
-              <Statistic title="Katılım Onayı" value={74} />
-            </Card>
-          </Col>
-        </Row>
-      </section>
+            <Col xs={24} md={8}>
+              <Card style={{ borderRadius: 14 }}>
+                <Statistic title="Katılım Onayı" value={74} />
+              </Card>
+            </Col>
+          </Row>
 
-      <section style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <Row gutter={[24, 24]}>
-          <Col xs={24} md={8}>
-            <Card
-              title="Yeni Etkinlik Oluştur"
-              style={{ height: "100%" }}
-              actions={[
-                <Link href="/admin/events/new" key="new-event">
+          <Row gutter={[20, 20]}>
+            <Col xs={24} md={8}>
+              <Card title="Yeni Etkinlik Oluştur" style={{ borderRadius: 14 }}>
+                <p>
+                  Etkinlik adı, açıklama, konum, tarih ve kapasite bilgilerini
+                  girerek yeni etkinlik oluştur.
+                </p>
+
+                <Link href="/admin/events/new">
                   <Button type="primary">Oluştur</Button>
-                </Link>,
-              ]}
-            >
-              <p>
-                Etkinlik adı, açıklama, konum, tarih ve kapasite bilgilerini
-                girerek yeni etkinlik oluştur.
-              </p>
-            </Card>
-          </Col>
+                </Link>
+              </Card>
+            </Col>
 
-          <Col xs={24} md={8}>
-            <Card
-              title="Etkinliklerimi Yönet"
-              style={{ height: "100%" }}
-              actions={[
-                <Link href="/admin/events" key="manage-events">
+            <Col xs={24} md={8}>
+              <Card title="Etkinliklerimi Yönet" style={{ borderRadius: 14 }}>
+                <p>Oluşturduğun etkinlikleri listele, düzenle veya sil.</p>
+
+                <Link href="/admin/events">
                   <Button type="primary">Yönet</Button>
-                </Link>,
-              ]}
-            >
-              <p>
-                Oluşturduğun etkinlikleri listele, düzenle veya sil.
-              </p>
-            </Card>
-          </Col>
+                </Link>
+              </Card>
+            </Col>
 
-          <Col xs={24} md={8}>
-            <Card
-              title="QR Kod Doğrula"
-              style={{ height: "100%" }}
-              actions={[
-                <Link href="/admin/check-in" key="check-in">
+            <Col xs={24} md={8}>
+              <Card title="QR Kod Doğrula" style={{ borderRadius: 14 }}>
+                <p>
+                  Katılımcının QR kodunu kamera ile okut ve katılım durumunu
+                  onayla.
+                </p>
+
+                <Link href="/admin/check-in">
                   <Button type="primary">Doğrula</Button>
-                </Link>,
-              ]}
-            >
-              <p>
-                Katılımcının QR kodunu kamera ile okut ve katılım durumunu
-                onayla.
-              </p>
-            </Card>
-          </Col>
-        </Row>
-      </section>
-    </main>
+                </Link>
+              </Card>
+            </Col>
+          </Row>
+        </section>
+      </main>
     </RoleGuard>
   );
 }

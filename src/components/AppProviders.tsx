@@ -84,7 +84,6 @@ export default function AppProviders({ children }: AppProvidersProps) {
         }}
       >
         <AntdApp>{children}</AntdApp>
-        {children}
       </ConfigProvider>
     </ThemeContext.Provider>
   );

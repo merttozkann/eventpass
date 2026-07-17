@@ -25,6 +25,8 @@ export default function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
       savedRole === "super_admin"
     ) {
       setRole(savedRole);
+    } else {
+      setRole("guest");
     }
 
     setIsReady(true);
