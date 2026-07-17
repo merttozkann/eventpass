@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: eventpass-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: eventpass_user
+      POSTGRES_PASSWORD: eventpass_password
+      POSTGRES_DB: eventpass_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - eventpass_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  eventpass_postgres_data:

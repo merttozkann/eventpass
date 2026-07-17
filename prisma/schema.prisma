@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum AdminRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AttendanceStatus {
+  NOT_ATTENDED
+  ATTENDED
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  fullName  String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdEvents Event[]        @relation("EventCreator")
+  registrations Registration[]
+  adminRequest  AdminRequest?
+}
+
+model Event {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  location    String
+  eventDate   DateTime
+  capacity    Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdById Int
+  createdBy   User @relation("EventCreator", fields: [createdById], references: [id])
+
+  registrations Registration[]
+}
+
+model Registration {
+  id        Int              @id @default(autoincrement())
+  qrCode    String           @unique
+  status    AttendanceStatus @default(NOT_ATTENDED)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  userId  Int
+  eventId Int
+
+  user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id])
+
+  @@unique([userId, eventId])
+}
+
+model AdminRequest {
+  id               Int                @id @default(autoincrement())
+  organizationName String
+  reason           String
+  status           AdminRequestStatus @default(PENDING)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id])
+}

@@ -1,18 +1,33 @@
-"use client";
-
-import { Button, Card, Col, Row, Space, Tag, Typography } from "antd";
+import { Button, Card, Col, Row, Space, Tag } from "antd";
 import Link from "next/link";
-import { events } from "../../data/events";
+import { prisma } from "../../lib/prisma";
 
-const { Title, Paragraph, Text } = Typography;
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-export default function EventsPage() {
+function formatDate(date: Date) {
+  return new Intl.DateTimeFormat("tr-TR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+export default async function EventsPage() {
+  const events = await prisma.event.findMany({
+    orderBy: {
+      eventDate: "asc",
+    },
+  });
+
   return (
     <main
       style={{
-        minHeight: "100vh",
+        minHeight: "calc(100vh - 68px)",
         backgroundColor: "var(--app-bg)",
-        padding: "32px 24px", // üst altta 32 pixel boşluk, yanlarda 24 pixel boşluk bırakır.
+        padding: "32px 24px",
       }}
     >
       <section
@@ -22,10 +37,19 @@ export default function EventsPage() {
           textAlign: "center",
         }}
       >
-        <Title level={1}>Etkinlikler</Title>
-        <Paragraph type="secondary">
+        <h1
+          style={{
+            fontSize: 36,
+            marginBottom: 8,
+            color: "var(--app-text)",
+          }}
+        >
+          Etkinlikler
+        </h1>
+
+        <p style={{ color: "var(--app-muted)", fontSize: 16 }}>
           Katılmak istediğin etkinliği seç ve QR kodlu biletini oluştur.
-        </Paragraph>
+        </p>
       </section>
 
       <section style={{ maxWidth: 1100, margin: "0 auto" }}>
@@ -34,21 +58,23 @@ export default function EventsPage() {
             <Col xs={24} md={12} lg={8} key={event.id}>
               <Card
                 title={event.title}
-                style={{ height: "100%" }}
+                style={{ height: "100%", borderRadius: 16 }}
                 actions={[
                   <Link href={`/events/${event.id}`} key="detail">
                     <Button type="primary">Detayları Gör</Button>
                   </Link>,
                 ]}
               >
-                <Paragraph>{event.description}</Paragraph>
+                <p style={{ color: "var(--app-muted)", lineHeight: 1.6 }}>
+                  {event.description}
+                </p>
 
                 <Space orientation="vertical" size="small">
-                  <Text>📍 {event.location}</Text>
-                  <Text>📅 {event.date}</Text>
-                  <Text>
+                  <span>📍 {event.location}</span>
+                  <span>📅 {formatDate(event.eventDate)}</span>
+                  <span>
                     👥 Kapasite: <Tag color="blue">{event.capacity}</Tag>
-                  </Text>
+                  </span>
                 </Space>
               </Card>
             </Col>
