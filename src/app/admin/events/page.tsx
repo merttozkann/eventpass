@@ -1,45 +1,78 @@
-import { Button, Card } from "antd";
+"use client";
+
+import { Alert, Button, Card, Spin } from "antd";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import RoleGuard from "../../../components/RoleGuard";
 import AdminEventsTable from "../../../components/AdminEventsTable";
 import type { AdminEventRow } from "../../../components/AdminEventsTable";
-import { prisma } from "../../../lib/prisma";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+type AdminEventApiRow = {
+  id: number;
+  title: string;
+  location: string;
+  eventDate: string;
+  capacity: number;
+  _count: {
+    registrations: number;
+  };
+};
 
-function formatDate(date: Date) {
+function formatDate(dateText: string) {
   return new Intl.DateTimeFormat("tr-TR", {
     day: "2-digit",
     month: "long",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(date);
+  }).format(new Date(dateText));
 }
 
-export default async function AdminEventsPage() {
-  const events = await prisma.event.findMany({
-    orderBy: {
-      eventDate: "asc",
-    },
-    include: {
-      _count: {
-        select: {
-          registrations: true,
-        },
-      },
-    },
-  });
+export default function AdminEventsPage() {
+  const [events, setEvents] = useState<AdminEventRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const eventRows: AdminEventRow[] = events.map((event) => ({
-    id: event.id,
-    title: event.title,
-    location: event.location,
-    eventDate: formatDate(event.eventDate),
-    capacity: event.capacity,
-    registrationCount: event._count.registrations,
-  }));
+  useEffect(() => {
+    async function fetchEvents() {
+      try {
+        const userId = localStorage.getItem("eventpass-user-id");
+
+        if (!userId) {
+          setErrorMessage("Admin kullanıcı bilgisi bulunamadı. Tekrar giriş yap.");
+          return;
+        }
+
+        const response = await fetch(`/api/admin/events?createdById=${userId}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          setErrorMessage(data.message || "Etkinlikler alınamadı.");
+          return;
+        }
+
+        const mappedEvents: AdminEventRow[] = data.events.map(
+          (event: AdminEventApiRow) => ({
+            id: event.id,
+            title: event.title,
+            location: event.location,
+            eventDate: formatDate(event.eventDate),
+            capacity: event.capacity,
+            registrationCount: event._count.registrations,
+          })
+        );
+
+        setEvents(mappedEvents);
+      } catch (error) {
+        console.error("Admin events page error:", error);
+        setErrorMessage("Bir hata oluştu.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchEvents();
+  }, []);
 
   return (
     <RoleGuard allowedRoles={["admin"]}>
@@ -47,7 +80,7 @@ export default async function AdminEventsPage() {
         style={{
           minHeight: "calc(100vh - 68px)",
           backgroundColor: "var(--app-bg)",
-          padding: "32px 24px",
+          padding: "48px 24px",
         }}
       >
         <section style={{ maxWidth: 1200, margin: "0 auto" }}>
@@ -56,38 +89,41 @@ export default async function AdminEventsPage() {
               style={{
                 display: "flex",
                 justifyContent: "space-between",
-                alignItems: "center",
                 gap: 16,
-                marginBottom: 24,
-                flexWrap: "wrap",
+                alignItems: "center",
+                marginBottom: 32,
               }}
             >
               <div>
-                <Link href="/admin">← Admin paneline dön</Link>
-
                 <h1
                   style={{
-                    fontSize: 30,
-                    marginTop: 16,
+                    fontSize: 34,
                     marginBottom: 8,
                     color: "var(--app-text)",
                   }}
                 >
-                  Etkinliklerimi Yönet
+                  Etkinliklerim
                 </h1>
 
                 <p style={{ color: "var(--app-muted)", margin: 0 }}>
-                  Oluşturduğun etkinlikleri buradan listeleyebilir ve
-                  yönetebilirsin.
+                  Sadece senin oluşturduğun etkinlikler burada görünür.
                 </p>
               </div>
 
               <Link href="/admin/events/new">
-                <Button type="primary">Yeni Etkinlik Oluştur</Button>
+                <Button type="primary">Yeni Etkinlik</Button>
               </Link>
             </div>
 
-            <AdminEventsTable initialEvents={eventRows} />
+            {loading && <Spin size="large" />}
+
+            {!loading && errorMessage && (
+              <Alert type="error" showIcon message={errorMessage} />
+            )}
+
+            {!loading && !errorMessage && (
+              <AdminEventsTable initialEvents={events} />
+            )}
           </Card>
         </section>
       </main>

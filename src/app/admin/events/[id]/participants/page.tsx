@@ -1,80 +1,45 @@
-"use client";
-
-import { Button, Card, QRCode, Space, Table, Tag, message, Result } from "antd";
-import type { TableProps } from "antd";
+import { Button, Card, Result } from "antd";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useState } from "react";
 import RoleGuard from "../../../../../components/RoleGuard";
-import { events } from "../../../../../data/events";
-import { participants } from "../../../../../data/participants";
-import type { Participant } from "../../../../../data/participants";
+import AdminParticipantsTable from "../../../../../components/AdminParticipantsTable";
+import type { ParticipantRow } from "../../../../../components/AdminParticipantsTable";
+import { prisma } from "../../../../../lib/prisma";
 
-export default function EventParticipantsPage() {
-  const params = useParams();
-  const eventId = Number(params.id);
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-  const event = events.find((event) => event.id === eventId);
+type EventParticipantsPageProps = {
+  params: Promise<{
+    id: string;
+  }>;
+};
 
-  const [participantList, setParticipantList] = useState<Participant[]>(
-    participants.filter((participant) => participant.eventId === eventId)
-  );
+export default async function EventParticipantsPage({
+  params,
+}: EventParticipantsPageProps) {
+  const { id } = await params;
+  const eventId = Number(id);
 
-  const handleMarkAsJoined = (id: number) => {
-    const updatedParticipants = participantList.map((participant) =>
-      participant.id === id
-        ? { ...participant, status: "Katıldı" as const }
-        : participant
-    );
-
-    setParticipantList(updatedParticipants);
-    message.success("Katılımcı durumu güncellendi.");
-  };
-
-  const columns: TableProps<Participant>["columns"] = [
-    {
-      title: "Ad Soyad",
-      dataIndex: "fullName",
-      key: "fullName",
+  const event = await prisma.event.findUnique({
+    where: {
+      id: eventId,
     },
-    {
-      title: "E-posta",
-      dataIndex: "email",
-      key: "email",
+    include: {
+      registrations: {
+        orderBy: {
+          id: "asc",
+        },
+        include: {
+          user: {
+            select: {
+              fullName: true,
+              email: true,
+            },
+          },
+        },
+      },
     },
-    {
-      title: "QR Kod",
-      dataIndex: "qrCode",
-      key: "qrCode",
-      render: (qrCode: string) => (
-        <Space orientation="vertical" size="small">
-          <QRCode value={qrCode} size={80} />
-          <span style={{ fontSize: 12, color: "var(--app-muted)"}}>{qrCode}</span>
-        </Space>
-      ),
-    },
-    {
-      title: "Katılım Durumu",
-      dataIndex: "status",
-      key: "status",
-      render: (status: Participant["status"]) => (
-        <Tag color={status === "Katıldı" ? "green" : "orange"}>{status}</Tag>
-      ),
-    },
-    {
-      title: "İşlem",
-      key: "action",
-      render: (_, record) => (
-        <Button
-          type="primary"
-          disabled={record.status === "Katıldı"}
-          onClick={() => handleMarkAsJoined(record.id)}
-        >
-          Katıldı Yap
-        </Button>
-      ),
-    },
-  ];
+  });
 
   if (!event) {
     return (
@@ -86,7 +51,7 @@ export default function EventParticipantsPage() {
             padding: "32px 24px",
           }}
         >
-          <Card style={{ maxWidth: 700, margin: "0 auto" }}>
+          <Card style={{ maxWidth: 700, margin: "0 auto", borderRadius: 16 }}>
             <Result
               status="404"
               title="Etkinlik bulunamadı"
@@ -103,6 +68,16 @@ export default function EventParticipantsPage() {
     );
   }
 
+  const participantRows: ParticipantRow[] = event.registrations.map(
+    (registration) => ({
+      id: registration.id,
+      fullName: registration.user.fullName,
+      email: registration.user.email,
+      qrCode: registration.qrCode,
+      status: registration.status,
+    })
+  );
+
   return (
     <RoleGuard allowedRoles={["admin"]}>
       <main
@@ -113,11 +88,17 @@ export default function EventParticipantsPage() {
         }}
       >
         <section style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <Card>
+          <Card style={{ borderRadius: 16 }}>
             <Link href="/admin/events">← Etkinliklerime dön</Link>
 
             <div style={{ marginTop: 24, marginBottom: 24 }}>
-              <h1 style={{ fontSize: 30, marginBottom: 8 }}>
+              <h1
+                style={{
+                  fontSize: 30,
+                  marginBottom: 8,
+                  color: "var(--app-text)",
+                }}
+              >
                 Katılımcılar
               </h1>
 
@@ -131,12 +112,7 @@ export default function EventParticipantsPage() {
               </p>
             </div>
 
-            <Table
-              columns={columns}
-              dataSource={participantList}
-              rowKey="id"
-              pagination={false}
-            />
+            <AdminParticipantsTable initialParticipants={participantRows} />
           </Card>
         </section>
       </main>

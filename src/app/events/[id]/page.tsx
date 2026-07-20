@@ -111,7 +111,7 @@ export default async function EventDetailPage({
 
           <Divider />
 
-          <JoinEventButton />
+          <JoinEventButton eventId={event.id} />
         </Card>
       </section>
     </main>

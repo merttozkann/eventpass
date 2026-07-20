@@ -1,97 +1,116 @@
 "use client";
 
-import { Button, Card, Col, QRCode, Row, Space, Tag } from "antd";
-import Link from "next/link";
-import { tickets } from "../../data/tickets";
+import { Alert, Card, Spin } from "antd";
+import { useEffect, useState } from "react";
 import RoleGuard from "../../components/RoleGuard";
+import MyTicketsList from "../../components/MyTicketsList";
+import type { TicketRow } from "../../components/MyTicketsList";
+
+type TicketApiRow = {
+  id: number;
+  qrCode: string;
+  status: "NOT_ATTENDED" | "ATTENDED";
+  event: {
+    title: string;
+    location: string;
+    eventDate: string;
+  };
+};
+
+function formatDate(dateText: string) {
+  return new Intl.DateTimeFormat("tr-TR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(dateText));
+}
 
 export default function MyTicketsPage() {
+  const [tickets, setTickets] = useState<TicketRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    async function fetchTickets() {
+      try {
+        const userId = localStorage.getItem("eventpass-user-id");
+
+        if (!userId) {
+          setErrorMessage("Kullanıcı bilgisi bulunamadı. Tekrar giriş yap.");
+          return;
+        }
+
+        const response = await fetch(`/api/my-tickets?userId=${userId}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          setErrorMessage(data.message || "Biletler alınamadı.");
+          return;
+        }
+
+        const mappedTickets: TicketRow[] = data.tickets.map(
+          (ticket: TicketApiRow) => ({
+            id: ticket.id,
+            qrCode: ticket.qrCode,
+            status: ticket.status,
+            eventTitle: ticket.event.title,
+            eventLocation: ticket.event.location,
+            eventDate: formatDate(ticket.event.eventDate),
+          })
+        );
+
+        setTickets(mappedTickets);
+      } catch (error) {
+        console.error("Fetch tickets page error:", error);
+        setErrorMessage("Bir hata oluştu.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchTickets();
+  }, []);
+
   return (
-    <RoleGuard allowedRoles={["admin"]}>
-    <main
-      style={{
-        minHeight: "100vh",
-        backgroundColor: "var(--app-bg)",
-        padding: "32px 24px",
-      }}
-    >
-      <section
+    <RoleGuard allowedRoles={["user", "admin"]}>
+      <main
         style={{
-          maxWidth: 1000,
-          margin: "0 auto 32px",
-          textAlign: "center",
+          minHeight: "calc(100vh - 68px)",
+          backgroundColor: "var(--app-bg)",
+          padding: "48px 24px",
         }}
       >
-        <h1 style={{ fontSize: 36, marginBottom: 8 }}>QR Biletlerim</h1>
+        <section style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <Card style={{ borderRadius: 16 }}>
+            <div style={{ marginBottom: 32 }}>
+              <h1
+                style={{
+                  fontSize: 34,
+                  marginBottom: 8,
+                  color: "var(--app-text)",
+                }}
+              >
+                Biletlerim
+              </h1>
 
-        <p style={{ color: "var(--app-muted)", fontSize: 16 }}>
-          Kayıt olduğun etkinlikleri ve QR kodlu biletlerini buradan
-          görebilirsin.
-        </p>
-      </section>
+              <p style={{ color: "var(--app-muted)", margin: 0 }}>
+                Katıldığın etkinliklerin QR kodlu biletlerini buradan
+                görebilirsin.
+              </p>
+            </div>
 
-      <section style={{ maxWidth: 1000, margin: "0 auto" }}>
-        <Row gutter={[24, 24]}>
-          {tickets.map((ticket) => (
-            <Col xs={24} key={ticket.id}>
-              <Card>
-                <Row gutter={[24, 24]} align="middle">
-                  <Col xs={24} md={16}>
-                    <h2 style={{ fontSize: 26, marginBottom: 16 }}>
-                      {ticket.eventTitle}
-                    </h2>
+            {loading && <Spin size="large" />}
 
-                    <Space orientation="vertical" size="middle">
-                      <span>👤 {ticket.fullName}</span>
-                      <span>📍 {ticket.location}</span>
-                      <span>📅 {ticket.date}</span>
-                      <span>
-                        Durum:{" "}
-                        <Tag
-                          color={
-                            ticket.status === "Katıldı" ? "green" : "orange"
-                          }
-                        >
-                          {ticket.status}
-                        </Tag>
-                      </span>
-                    </Space>
-                  </Col>
+            {!loading && errorMessage && (
+              <Alert type="error" showIcon message={errorMessage} />
+            )}
 
-                  <Col xs={24} md={8}>
-                    <div style={{ textAlign: "center" }}>
-                      <QRCode value={ticket.qrCode} size={160} />
-
-                      <p
-                        style={{
-                          marginTop: 12,
-                          color: "var(--app-muted)",
-                          wordBreak: "break-all",
-                        }}
-                      >
-                        {ticket.qrCode}
-                      </p>
-                    </div>
-                  </Col>
-                </Row>
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      </section>
-
-      <div
-        style={{
-          maxWidth: 1000,
-          margin: "24px auto 0",
-          textAlign: "center",
-        }}
-      >
-        <Link href="/events">
-          <Button type="primary">Etkinliklere Dön</Button>
-        </Link>
-      </div>
-    </main>
+            {!loading && !errorMessage && <MyTicketsList tickets={tickets} />}
+          </Card>
+        </section>
+      </main>
     </RoleGuard>
   );
 }

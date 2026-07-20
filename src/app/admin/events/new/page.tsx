@@ -43,6 +43,7 @@ export default function NewEventPage() {
         location: values.location,
         eventDate: values.eventDate.toISOString(),
         capacity: values.capacity,
+        userId: localStorage.getItem("eventpass-user-id"),
       }),
     });
 

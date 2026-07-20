@@ -1,128 +1,192 @@
 "use client";
 
-import { Alert, Button, Card, Input, Space, Tag, message } from "antd";
-import Link from "next/link";
+import {
+  Alert,
+  App as AntdApp,
+  Button,
+  Card,
+  Form,
+  Input,
+  Result,
+  Space,
+  Tag,
+} from "antd";
 import { useState } from "react";
-import { tickets } from "../../../data/tickets";
-import type { Ticket } from "../../../data/tickets";
 import RoleGuard from "../../../components/RoleGuard";
+import QrScanner from "../../../components/QrScanner";
 
-type CheckResult = {
-  status: "success" | "error" | "warning";
-  title: string;
-  description: string;
+type CheckInResult = {
+  id: number;
+  qrCode: string;
+  status: "NOT_ATTENDED" | "ATTENDED";
+  user: {
+    fullName: string;
+    email: string;
+  };
+  event: {
+    title: string;
+    location: string;
+    eventDate: string;
+  };
 };
 
+type CheckInFormValues = {
+  qrCode: string;
+};
+
+function formatDate(dateText: string) {
+  return new Intl.DateTimeFormat("tr-TR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(dateText));
+}
+
 export default function CheckInPage() {
-  const [qrCode, setQrCode] = useState("");
-  const [result, setResult] = useState<CheckResult | null>(null);
-  const [ticketList, setTicketList] = useState<Ticket[]>(tickets);
+  const { message } = AntdApp.useApp();
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<CheckInResult | null>(null);
 
-  const handleCheckQr = () => {
-    if (!qrCode.trim()) {
-      message.warning("Lütfen QR kod değerini giriniz.");
-      return;
-    }
+  const checkInWithQrCode = async (qrCode: string) => {
+    try {
+      setLoading(true);
+      setResult(null);
 
-    const ticket = ticketList.find(
-      (item) => item.qrCode === qrCode.trim()
-    );
-
-    if (!ticket) {
-      setResult({
-        status: "error",
-        title: "Geçersiz QR kod",
-        description:
-          "Bu QR kod sistemde kayıtlı değil veya bu etkinliğe ait değil.",
+      const response = await fetch("/api/admin/check-in", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          qrCode: qrCode.trim(),
+        }),
       });
 
-      return;
+      const data = await response.json();
+
+      if (!response.ok) {
+        message.error(data.message || "Check-in başarısız.");
+        return;
+      }
+
+      setResult(data.registration);
+      message.success(data.message || "Check-in başarılı.");
+    } catch (error) {
+      console.error("Check-in page error:", error);
+      message.error("Bir hata oluştu.");
+    } finally {
+      setLoading(false);
     }
+  };
 
-    if (ticket.status === "Katıldı") {
-      setResult({
-        status: "warning",
-        title: "QR kod daha önce kullanılmış",
-        description: `${ticket.fullName} adlı katılımcının ${ticket.eventTitle} etkinliği için katılımı daha önce onaylanmış.`,
-      });
+  const onFinish = async (values: CheckInFormValues) => {
+    await checkInWithQrCode(values.qrCode);
+  };
 
-      return;
-    }
-
-    const updatedTickets = ticketList.map((item) =>
-      item.id === ticket.id ? { ...item, status: "Katıldı" as const } : item
-    );
-
-    setTicketList(updatedTickets);
-
-    setResult({
-      status: "success",
-      title: "Katılım onaylandı",
-      description: `${ticket.fullName} adlı katılımcının ${ticket.eventTitle} etkinliği için katılımı başarıyla onaylandı.`,
-    });
+  const handleQrScanSuccess = async (qrCode: string) => {
+    await checkInWithQrCode(qrCode);
   };
 
   return (
     <RoleGuard allowedRoles={["admin"]}>
-    <main
-      style={{
-        minHeight: "100vh",
-        backgroundColor: "var(--app-bg)",
-        padding: "32px 24px",
-      }}
-    >
-      <section style={{ maxWidth: 750, margin: "0 auto" }}>
-        <Card>
-          <Link href="/admin">← Admin paneline dön</Link>
+      <main
+        style={{
+          minHeight: "calc(100vh - 68px)",
+          backgroundColor: "var(--app-bg)",
+          padding: "48px 24px",
+        }}
+      >
+        <section style={{ maxWidth: 800, margin: "0 auto" }}>
+          <Card style={{ borderRadius: 16 }}>
+            <div style={{ marginBottom: 24 }}>
+              <h1
+                style={{
+                  fontSize: 34,
+                  marginBottom: 8,
+                  color: "var(--app-text)",
+                }}
+              >
+                QR Check-in
+              </h1>
 
-          <h1 style={{ fontSize: 30, marginTop: 24, marginBottom: 8 }}>
-            QR Kod Doğrula
-          </h1>
+              <p style={{ color: "var(--app-muted)", margin: 0 }}>
+                Katılımcının biletindeki QR kod değerini girerek veya kamera ile
+                okutarak katılımını onaylayabilirsin.
+              </p>
+            </div>
 
-          <p style={{ color: "var(--app-muted)", marginBottom: 24 }}>
-            Katılımcının QR kodunu girerek etkinlik katılımını kontrol
-            edebilirsin.
-          </p>
-
-          <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
-            <Input
-              size="large"
-              placeholder="Örn: EVP-DEMO-QR-12345"
-              value={qrCode}
-              onChange={(event) => setQrCode(event.target.value)}
+            <Alert
+              type="info"
+              showIcon
+              title="Manuel giriş veya kamera ile QR okutma"
+              description="QR kod değerini elle yazabilir ya da kamerayı kullanarak okutabilirsin."
+              style={{ marginBottom: 24 }}
             />
 
-            <Button type="primary" size="large" block onClick={handleCheckQr}>
-              QR Kodu Kontrol Et
-            </Button>
+            <Form layout="vertical" onFinish={onFinish}>
+              <Form.Item
+                label="QR Kod"
+                name="qrCode"
+                rules={[{ required: true, message: "QR kod zorunludur." }]}
+              >
+                <Input placeholder="Örn: EVP-DEMO-QR-12345" />
+              </Form.Item>
+
+              <Button type="primary" htmlType="submit" loading={loading}>
+                Check-in Yap
+              </Button>
+            </Form>
+
+            <QrScanner onScanSuccess={handleQrScanSuccess} />
 
             {result && (
-              <Alert
-                type={result.status}
-                title={result.title}
-                description={result.description}
-                showIcon
-              />
+              <div style={{ marginTop: 32 }}>
+                <Result
+                  status="success"
+                  title="Katılımcı doğrulandı"
+                  subTitle="Bu bilet sistemde kayıtlı."
+                />
+
+                <Card style={{ borderRadius: 16 }}>
+                  <Space orientation="vertical" size="middle">
+                    <div>
+                      <strong>Katılımcı:</strong> {result.user.fullName}
+                    </div>
+
+                    <div>
+                      <strong>E-posta:</strong> {result.user.email}
+                    </div>
+
+                    <div>
+                      <strong>Etkinlik:</strong> {result.event.title}
+                    </div>
+
+                    <div>
+                      <strong>Konum:</strong> {result.event.location}
+                    </div>
+
+                    <div>
+                      <strong>Tarih:</strong>{" "}
+                      {formatDate(result.event.eventDate)}
+                    </div>
+
+                    <div>
+                      <strong>QR Kod:</strong> {result.qrCode}
+                    </div>
+
+                    <div>
+                      <strong>Durum:</strong>{" "}
+                      <Tag color="green">Katıldı</Tag>
+                    </div>
+                  </Space>
+                </Card>
+              </div>
             )}
-
-            <Card size="small" title="Deneme QR Kodları">
-              <Space orientation="vertical">
-                <span>
-                  Geçerli QR: <Tag color="green">EVP-DEMO-QR-12345</Tag>
-                </span>
-
-                <span>
-                  Daha önce okutulmuş QR:{" "}
-                  <Tag color="orange">EVP-DEMO-QR-67890</Tag>
-                </span>
-
-                <span>Geçersiz QR için rastgele bir şey yazabilirsin.</span>
-              </Space>
-            </Card>
-          </Space>
-        </Card>
-      </section>
-    </main>
+          </Card>
+        </section>
+      </main>
     </RoleGuard>
   );
 }

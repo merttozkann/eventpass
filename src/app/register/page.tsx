@@ -1,44 +1,61 @@
 "use client";
 
-import { Button, Card, Form, Input, Select, message } from "antd";
+import {
+  App as AntdApp,
+  Button,
+  Card,
+  Form,
+  Input,
+  Select,
+} from "antd";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-
-const { TextArea } = Input;
-
-type AccountType = "user" | "admin";
 
 type RegisterFormValues = {
   fullName: string;
   email: string;
   password: string;
-  accountType: AccountType;
+  accountType: "user" | "admin";
   organizationName?: string;
   adminReason?: string;
 };
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { message } = AntdApp.useApp();
   const [form] = Form.useForm<RegisterFormValues>();
 
   const accountType = Form.useWatch("accountType", form);
 
-  const onFinish = (values: RegisterFormValues) => {
-    console.log("Register form values:", values);
+  const onFinish = async (values: RegisterFormValues) => {
+    const response = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(values),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      message.error(data.message || "Kayıt başarısız.");
+      return;
+    }
+
+    message.success(data.message || "Kayıt başarılı.");
 
     if (values.accountType === "admin") {
-      message.success(
-        "Admin başvurun alındı. Super Admin onayından sonra admin olabilirsin."
-      );
-
       router.push("/login");
       return;
     }
 
     localStorage.setItem("eventpass-role", "user");
-    window.dispatchEvent(new Event("eventpass-role-change"));
-    message.success("Kayıt başarılı. Kullanıcı olarak giriş yapıldı.");
+    localStorage.setItem("eventpass-user-id", String(data.user.id));
+    localStorage.setItem("eventpass-user-email", data.user.email);
+    localStorage.setItem("eventpass-user-full-name", data.user.fullName);
 
+    window.dispatchEvent(new Event("eventpass-role-change"));
     router.push("/events");
   };
 
@@ -53,22 +70,29 @@ export default function RegisterPage() {
         alignItems: "center",
       }}
     >
-      <Card style={{ width: "100%", maxWidth: 480, borderRadius: 16 }}>
+      <Card style={{ width: "100%", maxWidth: 500, borderRadius: 16 }}>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <h1 style={{ fontSize: 32, marginBottom: 8 }}>EventPass</h1>
-          <p style={{ color: "var(--app-muted)", margin: 0 }}>Yeni hesap oluştur</p>
+          <h1 style={{ fontSize: 32, marginBottom: 8, color: "var(--app-text)" }}>
+            EventPass
+          </h1>
+
+          <p style={{ color: "var(--app-muted)", margin: 0 }}>
+            Yeni hesap oluştur
+          </p>
         </div>
 
         <Form
           form={form}
           layout="vertical"
-          initialValues={{ accountType: "user" }}
           onFinish={onFinish}
+          initialValues={{
+            accountType: "user",
+          }}
         >
           <Form.Item
             label="Ad Soyad"
             name="fullName"
-            rules={[{ required: true, message: "Ad soyad alanı zorunludur." }]}
+            rules={[{ required: true, message: "Ad soyad zorunludur." }]}
           >
             <Input placeholder="Adınızı ve soyadınızı girin" />
           </Form.Item>
@@ -77,7 +101,7 @@ export default function RegisterPage() {
             label="E-posta"
             name="email"
             rules={[
-              { required: true, message: "E-posta alanı zorunludur." },
+              { required: true, message: "E-posta zorunludur." },
               { type: "email", message: "Geçerli bir e-posta giriniz." },
             ]}
           >
@@ -87,10 +111,7 @@ export default function RegisterPage() {
           <Form.Item
             label="Şifre"
             name="password"
-            rules={[
-              { required: true, message: "Şifre alanı zorunludur." },
-              { min: 6, message: "Şifre en az 6 karakter olmalıdır." },
-            ]}
+            rules={[{ required: true, message: "Şifre zorunludur." }]}
           >
             <Input.Password placeholder="Şifrenizi girin" />
           </Form.Item>
@@ -98,12 +119,12 @@ export default function RegisterPage() {
           <Form.Item
             label="Hesap Türü"
             name="accountType"
-            rules={[{ required: true, message: "Hesap türü seçiniz." }]}
+            rules={[{ required: true, message: "Hesap türü zorunludur." }]}
           >
             <Select
               options={[
-                { value: "user", label: "Normal kullanıcı" },
-                { value: "admin", label: "Admin başvurusu" },
+                { label: "Normal Kullanıcı", value: "user" },
+                { label: "Admin Başvurusu", value: "admin" },
               ]}
             />
           </Form.Item>
@@ -124,25 +145,25 @@ export default function RegisterPage() {
               </Form.Item>
 
               <Form.Item
-                label="Admin Olma Nedeni"
+                label="Başvuru Nedeni"
                 name="adminReason"
                 rules={[
                   {
                     required: true,
-                    message: "Admin olma nedeni zorunludur.",
+                    message: "Başvuru nedeni zorunludur.",
                   },
                 ]}
               >
-                <TextArea
+                <Input.TextArea
                   rows={4}
-                  placeholder="Neden admin olmak istiyorsunuz?"
+                  placeholder="Neden admin olmak istediğinizi yazın"
                 />
               </Form.Item>
             </>
           )}
 
           <Button type="primary" htmlType="submit" block>
-            {accountType === "admin" ? "Admin Başvurusu Yap" : "Kayıt Ol"}
+            Kayıt Ol
           </Button>
         </Form>
 

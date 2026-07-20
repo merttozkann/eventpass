@@ -1,46 +1,70 @@
 "use client";
 
-import { Button, message } from "antd";
+import { App as AntdApp, Button } from "antd";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-type UserRole = "guest" | "user" | "admin" | "super_admin";
+type JoinEventButtonProps = {
+  eventId: number;
+};
 
-export default function JoinEventButton() {
+export default function JoinEventButton({ eventId }: JoinEventButtonProps) {
   const router = useRouter();
-  const [role, setRole] = useState<UserRole>("guest");
+  const { message } = AntdApp.useApp();
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const savedRole = localStorage.getItem("eventpass-role") as UserRole | null;
+  const handleJoinEvent = async () => {
+    const role = localStorage.getItem("eventpass-role") || "guest";
+    const userId = localStorage.getItem("eventpass-user-id");
 
-    if (
-      savedRole === "guest" ||
-      savedRole === "user" ||
-      savedRole === "admin" ||
-      savedRole === "super_admin"
-    ) {
-      setRole(savedRole);
-    }
-  }, []);
-
-  const handleJoin = () => {
-    if (role === "guest") {
-      message.warning("Etkinliğe katılmak için önce giriş yapmalısın.");
+    if (role === "guest" || !userId) {
+      message.warning("Etkinliğe katılmak için giriş yapmalısın.");
       router.push("/login");
       return;
     }
 
     if (role === "super_admin") {
-      message.warning("Super Admin hesabı ile etkinliğe katılım yapılmaz.");
+      message.warning("Super admin etkinliğe katılamaz.");
       return;
     }
 
-    message.success("Etkinlik kaydın oluşturuldu.");
-    router.push("/my-tickets");
+    try {
+      setLoading(true);
+
+      const response = await fetch(`/api/events/${eventId}/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        message.error(data.message || "Etkinliğe kayıt olunamadı.");
+        return;
+      }
+
+      message.success(data.message || "Etkinliğe kayıt oldun.");
+      router.push("/my-tickets");
+    } catch (error) {
+      console.error("Join event error:", error);
+      message.error("Bir hata oluştu.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <Button type="primary" size="large" block onClick={handleJoin}>
+    <Button
+      type="primary"
+      size="large"
+      loading={loading}
+      onClick={handleJoinEvent}
+    >
       Etkinliğe Katıl
     </Button>
   );

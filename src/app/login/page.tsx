@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Card, Form, Input, message } from "antd";
+import { App as AntdApp, Button, Card, Form, Input } from "antd";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -11,39 +11,51 @@ type LoginFormValues = {
   password: string;
 };
 
+type LoginResponse = {
+  message: string;
+  user?: {
+    id: number;
+    fullName: string;
+    email: string;
+    role: UserRole;
+  };
+};
+
 export default function LoginPage() {
   const router = useRouter();
+  const { message } = AntdApp.useApp();
 
-  const onFinish = (values: LoginFormValues) => {
-    let role: UserRole | null = null;
+  const onFinish = async (values: LoginFormValues) => {
+    const response = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(values),
+    });
 
-    if (values.email === "user@example.com") {
-      role = "user";
-    }
+    const data: LoginResponse = await response.json();
 
-    if (values.email === "admin@example.com") {
-      role = "admin";
-    }
-
-    if (values.email === "super@example.com") {
-      role = "super_admin";
-    }
-
-    if (!role) {
-      message.error("Geçersiz e-posta. Deneme hesaplarından birini kullan.");
+    if (!response.ok || !data.user) {
+      message.error(data.message || "Giriş başarısız.");
       return;
     }
 
-    localStorage.setItem("eventpass-role", role);
-    window.dispatchEvent(new Event("eventpass-role-change"));
-    message.success("Giriş başarılı.");
+    localStorage.setItem("eventpass-role", data.user.role);
+    localStorage.setItem("eventpass-user-id", String(data.user.id));
+    localStorage.setItem("eventpass-user-email", data.user.email);
+    localStorage.setItem("eventpass-user-full-name", data.user.fullName);
 
-    if (role === "admin") {
+    window.dispatchEvent(new Event("eventpass-role-change"));
+
+    message.success(data.message || "Giriş başarılı.");
+
+    if (data.user.role === "admin") {
       router.push("/admin");
       return;
     }
 
-    if (role === "super_admin") {
+    if (data.user.role === "super_admin") {
       router.push("/super-admin");
       return;
     }
@@ -64,8 +76,13 @@ export default function LoginPage() {
     >
       <Card style={{ width: "100%", maxWidth: 430, borderRadius: 16 }}>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <h1 style={{ fontSize: 32, marginBottom: 8 }}>EventPass</h1>
-          <p style={{ color: "var(--app-muted)", margin: 0 }}>Hesabına giriş yap</p>
+          <h1 style={{ fontSize: 32, marginBottom: 8, color: "var(--app-text)" }}>
+            EventPass
+          </h1>
+
+          <p style={{ color: "var(--app-muted)", margin: 0 }}>
+            Hesabına giriş yap
+          </p>
         </div>
 
         <Form layout="vertical" onFinish={onFinish}>
@@ -106,6 +123,10 @@ export default function LoginPage() {
 
           <p style={{ margin: "6px 0" }}>
             Super Admin: <strong>super@example.com</strong>
+          </p>
+
+          <p style={{ margin: "6px 0", color: "var(--app-muted)" }}>
+            Şifre: seed dosyasında ne yazdıysan o. Genelde <strong>123456</strong>.
           </p>
         </Card>
 

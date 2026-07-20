@@ -1,9 +1,9 @@
 "use client";
 
-import { Button, Popconfirm, Space, Table, Tag, message } from "antd";
+import { App as AntdApp, Button, Popconfirm, Space, Table, Tag } from "antd";
 import type { TableProps } from "antd";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export type AdminEventRow = {
   id: number;
@@ -21,14 +21,38 @@ type AdminEventsTableProps = {
 export default function AdminEventsTable({
   initialEvents,
 }: AdminEventsTableProps) {
-  const [adminEvents, setAdminEvents] =
-    useState<AdminEventRow[]>(initialEvents);
+  const { message } = AntdApp.useApp();
+  const [events, setEvents] = useState<AdminEventRow[]>(initialEvents);
+  useEffect(() => {
+    setEvents(initialEvents);
+  }, [initialEvents]);
 
-  const handleDelete = (id: number) => {
-    const filteredEvents = adminEvents.filter((event) => event.id !== id);
+  const handleDelete = async (id: number) => {
+    const userId = localStorage.getItem("eventpass-user-id");
 
-    setAdminEvents(filteredEvents);
-    message.success("Etkinlik ekrandan silindi. Veritabanı silme işlemini sonra bağlayacağız.");
+    if (!userId) {
+      message.error("Admin kullanıcı bilgisi bulunamadı. Tekrar giriş yap.");
+      return;
+    }
+
+    console.log("Silme isteği userId:", userId);
+    console.log("Silinecek event id:", id);
+
+    const response = await fetch(`/api/admin/events/${id}?createdById=${userId}`, {
+      method: "DELETE",
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      message.error(data.message || "Etkinlik silinemedi.");
+      return;
+    }
+
+    const updatedEvents = events.filter((event) => event.id !== id);
+
+    setEvents(updatedEvents);
+    message.success("Etkinlik silindi.");
   };
 
   const columns: TableProps<AdminEventRow>["columns"] = [
@@ -51,36 +75,38 @@ export default function AdminEventsTable({
       title: "Kapasite",
       dataIndex: "capacity",
       key: "capacity",
-      render: (capacity: number) => <Tag color="blue">{capacity} kişi</Tag>,
+      render: (capacity: number) => <Tag>{capacity} kişi</Tag>,
     },
     {
       title: "Kayıt Sayısı",
       dataIndex: "registrationCount",
       key: "registrationCount",
-      render: (count: number) => <Tag color="purple">{count} kişi</Tag>,
+      render: (registrationCount: number) => (
+        <Tag color="blue">{registrationCount} kayıt</Tag>
+      ),
     },
     {
       title: "İşlemler",
       key: "actions",
       render: (_, record) => (
-        <Space wrap>
+        <Space orientation="horizontal">
           <Link href={`/events/${record.id}`}>
             <Button>Detay</Button>
           </Link>
 
           <Link href={`/admin/events/${record.id}/participants`}>
-            <Button type="primary">Katılımcılar</Button>
+            <Button>Katılımcılar</Button>
           </Link>
 
           <Link href={`/admin/events/${record.id}/edit`}>
-            <Button>Düzenle</Button>
+            <Button type="primary">Düzenle</Button>
           </Link>
 
           <Popconfirm
-            title="Etkinlik silinsin mi?"
-            description="Şimdilik sadece ekrandan siler. Veritabanı silme işlemini sonra yapacağız."
+            title="Etkinliği sil"
+            description="Bu etkinliği silmek istediğine emin misin?"
             okText="Evet"
-            cancelText="Hayır"
+            cancelText="Vazgeç"
             onConfirm={() => handleDelete(record.id)}
           >
             <Button danger>Sil</Button>
@@ -93,10 +119,10 @@ export default function AdminEventsTable({
   return (
     <Table
       columns={columns}
-      dataSource={adminEvents}
+      dataSource={events}
       rowKey="id"
       pagination={false}
-      scroll={{ x: 900 }}
+      scroll={{ x: 1000 }}
     />
   );
 }
