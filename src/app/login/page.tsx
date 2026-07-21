@@ -110,10 +110,14 @@ export default function LoginPage() {
           </Button>
         </Form>
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 =======
         
 >>>>>>> c34f777 (Şifre hashleme sistemi eklendi)
+=======
+
+>>>>>>> 4fb3f36 (Şifre hashleme sistemi eklendi)
         <div style={{ textAlign: "center", marginTop: 16 }}>
           Hesabın yok mu? <Link href="/register">Kayıt ol</Link>
         </div>
