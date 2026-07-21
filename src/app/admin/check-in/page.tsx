@@ -61,6 +61,7 @@ export default function CheckInPage() {
         },
         body: JSON.stringify({
           qrCode: qrCode.trim(),
+          userId: localStorage.getItem("eventpass-user-id"),
         }),
       });
 

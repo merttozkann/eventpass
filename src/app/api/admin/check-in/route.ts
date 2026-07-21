@@ -6,12 +6,34 @@ export const runtime = "nodejs";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { qrCode } = body;
+    const { qrCode, userId } = body;
+
+    const adminUserId = Number(userId);
 
     if (!qrCode || typeof qrCode !== "string") {
       return NextResponse.json(
         { message: "QR kod zorunludur." },
         { status: 400 }
+      );
+    }
+
+    if (Number.isNaN(adminUserId)) {
+      return NextResponse.json(
+        { message: "Admin kullanıcı bilgisi bulunamadı. Tekrar giriş yap." },
+        { status: 400 }
+      );
+    }
+
+    const adminUser = await prisma.user.findUnique({
+      where: {
+        id: adminUserId,
+      },
+    });
+
+    if (!adminUser || adminUser.role !== "ADMIN") {
+      return NextResponse.json(
+        { message: "Sadece admin kullanıcılar check-in yapabilir." },
+        { status: 403 }
       );
     }
 
@@ -28,9 +50,11 @@ export async function POST(request: Request) {
         },
         event: {
           select: {
+            id: true,
             title: true,
             location: true,
             eventDate: true,
+            createdById: true,
           },
         },
       },
@@ -43,14 +67,18 @@ export async function POST(request: Request) {
       );
     }
 
-    if (registration.status === "ATTENDED") {
+    if (registration.event.createdById !== adminUserId) {
       return NextResponse.json(
-        {
-          message: "Bu bilet zaten daha önce okutulmuş.",
-          registration,
-        },
-        { status: 200 }
+        { message: "Bu etkinlik sana ait değil." },
+        { status: 403 }
       );
+    }
+
+    if (registration.status === "ATTENDED") {
+      return NextResponse.json({
+        message: "Bu bilet zaten daha önce okutulmuş.",
+        registration,
+      });
     }
 
     const updatedRegistration = await prisma.registration.update({

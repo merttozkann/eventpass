@@ -1,211 +1,136 @@
 "use client";
 
-import { Button, Select, Switch, Tag } from "antd";
-import { useAppTheme } from "./AppProviders";
+import { Button, Space } from "antd";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 type UserRole = "guest" | "user" | "admin" | "super_admin";
 
-type NavItem = {
-  href: string;
-  label: string;
-};
-
-const roleLabels: Record<UserRole, string> = {
-  guest: "Ziyaretçi",
-  user: "User",
-  admin: "Admin",
-  super_admin: "Super Admin",
-};
-
 export default function Navbar() {
-  const pathname = usePathname();
-  const { appTheme, toggleTheme } = useAppTheme();
   const [role, setRole] = useState<UserRole>("guest");
+  const [fullName, setFullName] = useState("");
+
+  const readUserFromLocalStorage = () => {
+    const storedRole =
+      (localStorage.getItem("eventpass-role") as UserRole | null) || "guest";
+
+    const storedFullName = localStorage.getItem("eventpass-user-full-name") || "";
+
+    setRole(storedRole);
+    setFullName(storedFullName);
+  };
 
   useEffect(() => {
-    const readRoleFromStorage = () => {
-      const savedRole = localStorage.getItem("eventpass-role") as UserRole | null;
+    readUserFromLocalStorage();
 
-      if (
-        savedRole === "guest" ||
-        savedRole === "user" ||
-        savedRole === "admin" ||
-        savedRole === "super_admin"
-      ) {
-        setRole(savedRole);
-      } else {
-        setRole("guest");
-      }
-    };
-
-    readRoleFromStorage();
-
-    window.addEventListener("eventpass-role-change", readRoleFromStorage);
+    window.addEventListener("eventpass-role-change", readUserFromLocalStorage);
 
     return () => {
-      window.removeEventListener("eventpass-role-change", readRoleFromStorage);
+      window.removeEventListener(
+        "eventpass-role-change",
+        readUserFromLocalStorage
+      );
     };
   }, []);
 
-  const handleRoleChange = (value: UserRole) => {
-    setRole(value);
-    localStorage.setItem("eventpass-role", value);
-    window.dispatchEvent(new Event("eventpass-role-change"));
-  };
-
   const handleLogout = () => {
+    localStorage.removeItem("eventpass-role");
+    localStorage.removeItem("eventpass-user-id");
+    localStorage.removeItem("eventpass-user-email");
+    localStorage.removeItem("eventpass-user-full-name");
+
     setRole("guest");
-    localStorage.setItem("eventpass-role", "guest");
+    setFullName("");
+
     window.dispatchEvent(new Event("eventpass-role-change"));
   };
 
-  const navItems: NavItem[] = [
-    {
-      href: "/",
-      label: "Ana Sayfa",
-    },
-    {
-      href: "/events",
-      label: "Etkinlikler",
-    },
-  ];
-
-  if (role === "user" || role === "admin") {
-    navItems.push({
-      href: "/my-tickets",
-      label: "Biletlerim",
-    });
-  }
-
-  if (role === "admin") {
-    navItems.push({
-      href: "/admin",
-      label: "Admin Paneli",
-    });
-  }
-
-  if (role === "super_admin") {
-    navItems.push({
-      href: "/super-admin",
-      label: "Super Admin",
-    });
-  }
-
-  const isActive = (href: string) => {
-    if (href === "/") {
-      return pathname === "/";
-    }
-
-    return pathname.startsWith(href);
-  };
+  const isLoggedIn = role !== "guest";
 
   return (
     <header
       style={{
-        width: "100%",
-        backgroundColor: "var(--app-surface)",
+        height: 68,
         borderBottom: "1px solid var(--app-border)",
+        backgroundColor: "var(--app-card)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "0 32px",
         position: "sticky",
         top: 0,
-        zIndex: 1000,
+        zIndex: 100,
       }}
     >
-      <div
+      <Link
+        href="/"
         style={{
-          maxWidth: 1180,
-          margin: "0 auto",
-          minHeight: 68,
-          padding: "0 24px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 24,
-          flexWrap: "wrap",
+          fontSize: 24,
+          fontWeight: 700,
+          color: "var(--app-text)",
+          textDecoration: "none",
         }}
       >
-        <Link
-          href="/"
-          style={{
-            fontSize: 24,
-            fontWeight: 800,
-            color: "#1677ff",
-            letterSpacing: "-0.5px",
-          }}
-        >
-          EventPass
+        EventPass
+      </Link>
+
+      <Space size="middle">
+        <Link href="/events">
+          <Button type="text">Etkinlikler</Button>
         </Link>
 
-        <nav
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 24,
-            flexWrap: "wrap",
-            flex: 1,
-          }}
-        >
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              style={{
-                color: isActive(item.href) ? "#1677ff" : "#374151",
-                fontWeight: isActive(item.href) ? 700 : 500,
-              }}
-            >
-              {item.label}
+        {(role === "user" || role === "admin") && (
+          <Link href="/my-tickets">
+            <Button type="text">Biletlerim</Button>
+          </Link>
+        )}
+
+        {role === "admin" && (
+          <>
+            <Link href="/admin">
+              <Button type="text">Admin Paneli</Button>
             </Link>
-          ))}
-        </nav>
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            flexWrap: "wrap",
-          }}
-        >
-          <Switch
-            checked={appTheme === "dark"}
-            onChange={() => toggleTheme()}
-            checkedChildren="🌙"
-            unCheckedChildren="☀️"
-          />
-          <Tag color={role === "guest" ? "default" : "blue"}>
-            {roleLabels[role]}
-          </Tag>
+            <Link href="/admin/events">
+              <Button type="text">Etkinliklerim</Button>
+            </Link>
 
-          <Select<UserRole>
-            value={role}
-            style={{ width: 150 }}
-            onChange={handleRoleChange}
-            options={[
-              { value: "guest", label: "Ziyaretçi" },
-              { value: "user", label: "User" },
-              { value: "admin", label: "Admin" },
-              { value: "super_admin", label: "Super Admin" },
-            ]}
-          />
+            <Link href="/admin/check-in">
+              <Button type="text">Check-in</Button>
+            </Link>
+          </>
+        )}
 
-          {role === "guest" ? (
-            <>
-              <Link href="/login">
-                <Button>Giriş Yap</Button>
-              </Link>
+        {role === "super_admin" && (
+          <Link href="/super-admin">
+            <Button type="text">Super Admin</Button>
+          </Link>
+        )}
 
-              <Link href="/register">
-                <Button type="primary">Kayıt Ol</Button>
-              </Link>
-            </>
-          ) : (
-            <Button onClick={handleLogout}>Çıkış Yap</Button>
-          )}
-        </div>
-      </div>
+        {!isLoggedIn && (
+          <>
+            <Link href="/login">
+              <Button>Giriş Yap</Button>
+            </Link>
+
+            <Link href="/register">
+              <Button type="primary">Kayıt Ol</Button>
+            </Link>
+          </>
+        )}
+
+        {isLoggedIn && (
+          <>
+            <span style={{ color: "var(--app-muted)" }}>
+              {fullName || role}
+            </span>
+
+            <Button danger onClick={handleLogout}>
+              Çıkış Yap
+            </Button>
+          </>
+        )}
+      </Space>
     </header>
   );
 }

@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
+import {
+  hashPassword,
+  isHashedPassword,
+  verifyPassword,
+} from "../../../../lib/password";
 
 export const runtime = "nodejs";
 
@@ -47,11 +52,24 @@ export async function POST(request: Request) {
       );
     }
 
-    if (user.password !== password) {
+    const isPasswordValid = verifyPassword(password, user.password);
+
+    if (!isPasswordValid) {
       return NextResponse.json(
         { message: "Şifre hatalı." },
         { status: 401 }
       );
+    }
+
+    if (!isHashedPassword(user.password)) {
+      await prisma.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          password: hashPassword(password),
+        },
+      });
     }
 
     return NextResponse.json({

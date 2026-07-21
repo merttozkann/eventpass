@@ -22,31 +22,44 @@ export default function AdminParticipantsTable({
   const { message } = AntdApp.useApp();
   const [participants, setParticipants] =
     useState<ParticipantRow[]>(initialParticipants);
-    useEffect(() => {
-  setParticipants(initialParticipants);
-}, [initialParticipants]);
+  useEffect(() => {
+    setParticipants(initialParticipants);
+  }, [initialParticipants]);
 
-const handleMarkAsAttended = async (id: number) => {
-  const response = await fetch(`/api/admin/registrations/${id}/attend`, {
-    method: "PATCH",
-  });
+  const handleMarkAsAttended = async (id: number) => {
+    const userId = localStorage.getItem("eventpass-user-id");
 
-  const data = await response.json();
+    if (!userId) {
+      message.error("Admin kullanıcı bilgisi bulunamadı. Tekrar giriş yap.");
+      return;
+    }
 
-  if (!response.ok) {
-    message.error(data.message || "Katılım onaylanamadı.");
-    return;
-  }
+    const response = await fetch(`/api/admin/registrations/${id}/attend`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId,
+      }),
+    });
 
-  const updatedParticipants = participants.map((participant) =>
-    participant.id === id
-      ? { ...participant, status: "ATTENDED" as const }
-      : participant
-  );
+    const data = await response.json();
 
-  setParticipants(updatedParticipants);
-  message.success("Katılım onaylandı.");
-};
+    if (!response.ok) {
+      message.error(data.message || "Katılım onaylanamadı.");
+      return;
+    }
+
+    const updatedParticipants = participants.map((participant) =>
+      participant.id === id
+        ? { ...participant, status: "ATTENDED" as const }
+        : participant
+    );
+
+    setParticipants(updatedParticipants);
+    message.success(data.message || "Katılım onaylandı.");
+  };
 
   const columns: TableProps<ParticipantRow>["columns"] = [
     {

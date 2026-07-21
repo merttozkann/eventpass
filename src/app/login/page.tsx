@@ -109,7 +109,11 @@ export default function LoginPage() {
             Giriş Yap
           </Button>
         </Form>
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> c34f777 (Şifre hashleme sistemi eklendi)
         <div style={{ textAlign: "center", marginTop: 16 }}>
           Hesabın yok mu? <Link href="/register">Kayıt ol</Link>
         </div>
