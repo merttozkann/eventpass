@@ -110,26 +110,6 @@ export default function LoginPage() {
           </Button>
         </Form>
 
-        <Card size="small" style={{ marginTop: 20, backgroundColor: "#fafafa" }}>
-          <p style={{ marginTop: 0, fontWeight: 600 }}>Deneme hesapları:</p>
-
-          <p style={{ margin: "6px 0" }}>
-            User: <strong>user@example.com</strong>
-          </p>
-
-          <p style={{ margin: "6px 0" }}>
-            Admin: <strong>admin@example.com</strong>
-          </p>
-
-          <p style={{ margin: "6px 0" }}>
-            Super Admin: <strong>super@example.com</strong>
-          </p>
-
-          <p style={{ margin: "6px 0", color: "var(--app-muted)" }}>
-            Şifre: seed dosyasında ne yazdıysan o. Genelde <strong>123456</strong>.
-          </p>
-        </Card>
-
         <div style={{ textAlign: "center", marginTop: 16 }}>
           Hesabın yok mu? <Link href="/register">Kayıt ol</Link>
         </div>
