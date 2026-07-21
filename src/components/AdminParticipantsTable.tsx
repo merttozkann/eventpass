@@ -2,7 +2,7 @@
 
 import { App as AntdApp, Button, QRCode, Space, Table, Tag } from "antd";
 import type { TableProps } from "antd";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export type ParticipantRow = {
   id: number;
@@ -22,6 +22,9 @@ export default function AdminParticipantsTable({
   const { message } = AntdApp.useApp();
   const [participants, setParticipants] =
     useState<ParticipantRow[]>(initialParticipants);
+    useEffect(() => {
+  setParticipants(initialParticipants);
+}, [initialParticipants]);
 
 const handleMarkAsAttended = async (id: number) => {
   const response = await fetch(`/api/admin/registrations/${id}/attend`, {
