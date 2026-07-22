@@ -1,8 +1,8 @@
 "use client";
 
-import { Alert, Button, Card, Spin } from "antd";
+import { Alert, Button, Card, Input, Select, Space, Spin } from "antd";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import RoleGuard from "../../../components/RoleGuard";
 import AdminEventsTable from "../../../components/AdminEventsTable";
 import type { AdminEventRow } from "../../../components/AdminEventsTable";
@@ -18,6 +18,12 @@ type AdminEventApiRow = {
   };
 };
 
+type AdminEventListItem = AdminEventRow & {
+  eventDateRaw: string;
+};
+
+type DateFilter = "all" | "upcoming" | "past";
+
 function formatDate(dateText: string) {
   return new Intl.DateTimeFormat("tr-TR", {
     day: "2-digit",
@@ -29,9 +35,12 @@ function formatDate(dateText: string) {
 }
 
 export default function AdminEventsPage() {
-  const [events, setEvents] = useState<AdminEventRow[]>([]);
+  const [events, setEvents] = useState<AdminEventListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+
+  const [searchText, setSearchText] = useState("");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("all");
 
   useEffect(() => {
     async function fetchEvents() {
@@ -51,12 +60,13 @@ export default function AdminEventsPage() {
           return;
         }
 
-        const mappedEvents: AdminEventRow[] = data.events.map(
+        const mappedEvents: AdminEventListItem[] = data.events.map(
           (event: AdminEventApiRow) => ({
             id: event.id,
             title: event.title,
             location: event.location,
             eventDate: formatDate(event.eventDate),
+            eventDateRaw: event.eventDate,
             capacity: event.capacity,
             registrationCount: event._count.registrations,
           })
@@ -73,6 +83,29 @@ export default function AdminEventsPage() {
 
     fetchEvents();
   }, []);
+
+  const filteredEvents = useMemo(() => {
+    const normalizedSearchText = searchText
+      .trim()
+      .toLocaleLowerCase("tr-TR");
+
+    const now = new Date();
+
+    return events.filter((event) => {
+      const matchesSearch =
+        normalizedSearchText.length === 0 ||
+        event.title.toLocaleLowerCase("tr-TR").includes(normalizedSearchText);
+
+      const eventDate = new Date(event.eventDateRaw);
+
+      const matchesDateFilter =
+        dateFilter === "all" ||
+        (dateFilter === "upcoming" && eventDate >= now) ||
+        (dateFilter === "past" && eventDate < now);
+
+      return matchesSearch && matchesDateFilter;
+    });
+  }, [events, searchText, dateFilter]);
 
   return (
     <RoleGuard allowedRoles={["admin"]}>
@@ -122,7 +155,44 @@ export default function AdminEventsPage() {
             )}
 
             {!loading && !errorMessage && (
-              <AdminEventsTable initialEvents={events} />
+              <>
+                <Space
+                  orientation="horizontal"
+                  size="middle"
+                  wrap
+                  style={{ marginBottom: 24 }}
+                >
+                  <Input
+                    allowClear
+                    placeholder="Etkinlik adına göre ara"
+                    value={searchText}
+                    onChange={(event) => setSearchText(event.target.value)}
+                    style={{ width: 280 }}
+                  />
+
+                  <Select
+                    value={dateFilter}
+                    onChange={(value) => setDateFilter(value)}
+                    style={{ width: 220 }}
+                    options={[
+                      {
+                        label: "Tüm etkinlikler",
+                        value: "all",
+                      },
+                      {
+                        label: "Yaklaşan etkinlikler",
+                        value: "upcoming",
+                      },
+                      {
+                        label: "Geçmiş etkinlikler",
+                        value: "past",
+                      },
+                    ]}
+                  />
+                </Space>
+
+                <AdminEventsTable initialEvents={filteredEvents} />
+              </>
             )}
           </Card>
         </section>

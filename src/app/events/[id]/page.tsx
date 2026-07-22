@@ -48,70 +48,76 @@ export default async function EventDetailPage({
   }
 
   const registeredCount = event.registrations.length;
+  const remainingCapacity = event.capacity - registeredCount;
+  const isFull = remainingCapacity <= 0;
 
   return (
     <main
       style={{
         minHeight: "calc(100vh - 68px)",
         backgroundColor: "var(--app-bg)",
-        padding: "32px 24px",
+        padding: "48px 24px",
       }}
     >
-      <section style={{ maxWidth: 800, margin: "0 auto" }}>
+      <section style={{ maxWidth: 900, margin: "0 auto" }}>
         <Card style={{ borderRadius: 16 }}>
           <Link href="/events">← Etkinliklere dön</Link>
 
+          <div style={{ marginTop: 24 }}>
+            <h1
+              style={{
+                fontSize: 38,
+                marginBottom: 12,
+                color: "var(--app-text)",
+              }}
+            >
+              {event.title}
+            </h1>
+
+            <p
+              style={{
+                color: "var(--app-muted)",
+                fontSize: 16,
+                lineHeight: 1.7,
+              }}
+            >
+              {event.description}
+            </p>
+          </div>
+
           <Divider />
 
-          <h1
-            style={{
-              fontSize: 32,
-              marginBottom: 12,
-              color: "var(--app-text)",
-            }}
-          >
-            {event.title}
-          </h1>
-
-          <p
-            style={{
-              color: "var(--app-muted)",
-              fontSize: 16,
-              lineHeight: 1.7,
-            }}
-          >
-            {event.description}
-          </p>
-
-          <Divider />
-
-          <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
-            <span>
+          <Space orientation="vertical" size="middle">
+            <div>
               <strong>Konum:</strong> {event.location}
-            </span>
+            </div>
 
-            <span>
+            <div>
               <strong>Tarih:</strong> {formatDate(event.eventDate)}
-            </span>
+            </div>
 
-            <span>
-              <strong>Kapasite:</strong>{" "}
-              <Tag color="blue">{event.capacity} kişi</Tag>
-            </span>
+            <div>
+              <strong>Oluşturan Admin:</strong> {event.createdBy.fullName}
+            </div>
 
-            <span>
-              <strong>Kayıtlı kişi:</strong>{" "}
-              <Tag color="purple">{registeredCount} kişi</Tag>
-            </span>
+            <Space orientation="vertical" size="small">
+              <Tag color="blue">Kapasite: {event.capacity}</Tag>
 
-            <span>
-              <strong>Oluşturan admin:</strong> {event.createdBy.fullName}
-            </span>
+              <Tag color="purple">Kayıtlı: {registeredCount}</Tag>
+
+              {isFull ? (
+                <Tag color="red">Etkinlik dolu</Tag>
+              ) : (
+                <Tag color="green">
+                  Kalan kontenjan: {remainingCapacity}
+                </Tag>
+              )}
+            </Space>
           </Space>
 
           <Divider />
-
-          <JoinEventButton eventId={event.id} />
+              
+          <JoinEventButton eventId={event.id} isFull={isFull} />
         </Card>
       </section>
     </main>

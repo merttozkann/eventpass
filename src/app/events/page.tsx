@@ -20,6 +20,13 @@ export default async function EventsPage() {
     orderBy: {
       eventDate: "asc",
     },
+    include: {
+      _count: {
+        select: {
+          registrations: true,
+        },
+      },
+    },
   });
 
   return (
@@ -54,31 +61,41 @@ export default async function EventsPage() {
 
       <section style={{ maxWidth: 1100, margin: "0 auto" }}>
         <Row gutter={[24, 24]}>
-          {events.map((event) => (
-            <Col xs={24} md={12} lg={8} key={event.id}>
-              <Card
-                title={event.title}
-                style={{ height: "100%", borderRadius: 16 }}
-                actions={[
-                  <Link href={`/events/${event.id}`} key="detail">
-                    <Button type="primary">Detayları Gör</Button>
-                  </Link>,
-                ]}
-              >
-                <p style={{ color: "var(--app-muted)", lineHeight: 1.6 }}>
-                  {event.description}
-                </p>
+          {events.map((event) => {
+            const registeredCount = event._count.registrations;
+            const remainingCapacity = event.capacity - registeredCount;
+            const isFull = remainingCapacity <= 0;
 
-                <Space orientation="vertical" size="small">
-                  <span>📍 {event.location}</span>
-                  <span>📅 {formatDate(event.eventDate)}</span>
-                  <span>
-                    👥 Kapasite: <Tag color="blue">{event.capacity}</Tag>
-                  </span>
-                </Space>
-              </Card>
-            </Col>
-          ))}
+            return (
+              <Col xs={24} md={12} lg={8} key={event.id}>
+                <Card style={{ borderRadius: 16, height: "100%" }}>
+                  <h2 style={{ color: "var(--app-text)" }}>{event.title}</h2>
+
+                  <p style={{ color: "var(--app-muted)" }}>{event.description}</p>
+
+                  <Space orientation="vertical" size="small">
+                    <Tag color="blue">Kapasite: {event.capacity}</Tag>
+
+                    <Tag color="purple">Kayıtlı: {registeredCount}</Tag>
+
+                    {isFull ? (
+                      <Tag color="red">Etkinlik dolu</Tag>
+                    ) : (
+                      <Tag color="green">Kalan kontenjan: {remainingCapacity}</Tag>
+                    )}
+                  </Space>
+
+                  <div style={{ marginTop: 20 }}>
+                    <Link href={`/events/${event.id}`}>
+                      <Button type="primary">
+                        Detayları Gör
+                      </Button>
+                    </Link>
+                  </div>
+                </Card>
+              </Col>
+            );
+          })}
         </Row>
       </section>
     </main>

@@ -1,10 +1,12 @@
 "use client";
 
-import { Alert, Card, Spin } from "antd";
-import { useEffect, useState } from "react";
+import { Alert, Card, Select, Space, Spin } from "antd";
+import { useEffect, useMemo, useState } from "react";
 import RoleGuard from "../../components/RoleGuard";
 import MyTicketsList from "../../components/MyTicketsList";
 import type { TicketRow } from "../../components/MyTicketsList";
+
+type TicketFilter = "all" | "attended" | "not_attended";
 
 type TicketApiRow = {
   id: number;
@@ -31,6 +33,7 @@ export default function MyTicketsPage() {
   const [tickets, setTickets] = useState<TicketRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [statusFilter, setStatusFilter] = useState<TicketFilter>("all");
 
   useEffect(() => {
     async function fetchTickets() {
@@ -73,6 +76,22 @@ export default function MyTicketsPage() {
     fetchTickets();
   }, []);
 
+  const filteredTickets = useMemo(() => {
+    if (statusFilter === "all") {
+      return tickets;
+    }
+
+    if (statusFilter === "attended") {
+      return tickets.filter(
+        (ticket) => ticket.status === "ATTENDED"
+      );
+    }
+
+    return tickets.filter(
+      (ticket) => ticket.status === "NOT_ATTENDED"
+    );
+  }, [tickets, statusFilter]);
+
   return (
     <RoleGuard allowedRoles={["user", "admin"]}>
       <main
@@ -107,7 +126,33 @@ export default function MyTicketsPage() {
               <Alert type="error" showIcon message={errorMessage} />
             )}
 
-            {!loading && !errorMessage && <MyTicketsList tickets={tickets} />}
+            {!loading && !errorMessage && (
+              <>
+                <Space style={{ marginBottom: 20 }}>
+                  <Select
+                    value={statusFilter}
+                    style={{ width: 220 }}
+                    onChange={(value) => setStatusFilter(value)}
+                    options={[
+                      {
+                        label: "Tüm Biletler",
+                        value: "all",
+                      },
+                      {
+                        label: "Katıldı",
+                        value: "attended",
+                      },
+                      {
+                        label: "Katılmadı",
+                        value: "not_attended",
+                      },
+                    ]}
+                  />
+                </Space>
+
+                <MyTicketsList tickets={filteredTickets} />
+              </>
+            )}
           </Card>
         </section>
       </main>

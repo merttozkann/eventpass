@@ -1,8 +1,8 @@
 "use client";
 
-import { App as AntdApp, Button, Popconfirm, Space, Table, Tag } from "antd";
+import { App as AntdApp, Button, Popconfirm, Select, Space, Table, Tag } from "antd";
 import type { TableProps } from "antd";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 export type AdminRequestRow = {
     id: number;
@@ -15,6 +15,8 @@ export type AdminRequestRow = {
     };
 };
 
+type RequestFilter = "all" | "PENDING" | "APPROVED" | "REJECTED";
+
 type SuperAdminRequestsTableProps = {
     initialRequests: AdminRequestRow[];
 };
@@ -24,6 +26,18 @@ export default function SuperAdminRequestsTable({
 }: SuperAdminRequestsTableProps) {
     const { message } = AntdApp.useApp();
     const [requests, setRequests] = useState<AdminRequestRow[]>(initialRequests);
+    const [statusFilter, setStatusFilter] =
+        useState<RequestFilter>("all");
+
+    const filteredRequests = useMemo(() => {
+        if (statusFilter === "all") {
+            return requests;
+        }
+
+        return requests.filter(
+            (request) => request.status === statusFilter
+        );
+    }, [requests, statusFilter]);
 
     const handleAction = async (id: number, action: "approve" | "reject") => {
         const response = await fetch(`/api/super-admin/admin-requests/${id}`, {
@@ -134,12 +148,40 @@ export default function SuperAdminRequestsTable({
     ];
 
     return (
-        <Table
-            columns={columns}
-            dataSource={requests}
-            rowKey="id"
-            pagination={false}
-            scroll={{ x: 1000 }}
-        />
+        <>
+            <Space style={{ marginBottom: 20 }}>
+                <Select
+                    value={statusFilter}
+                    style={{ width: 230 }}
+                    onChange={(value) => setStatusFilter(value)}
+                    options={[
+                        {
+                            label: "Tüm Başvurular",
+                            value: "all",
+                        },
+                        {
+                            label: "Bekleyen",
+                            value: "PENDING",
+                        },
+                        {
+                            label: "Onaylanan",
+                            value: "APPROVED",
+                        },
+                        {
+                            label: "Reddedilen",
+                            value: "REJECTED",
+                        },
+                    ]}
+                />
+            </Space>
+
+            <Table
+                columns={columns}
+                dataSource={filteredRequests}
+                rowKey="id"
+                pagination={false}
+                scroll={{ x: 1000 }}
+            />
+        </>
     );
 }
