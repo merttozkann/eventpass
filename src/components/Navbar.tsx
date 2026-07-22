@@ -3,10 +3,12 @@
 import { Button, Space } from "antd";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 type UserRole = "guest" | "user" | "admin" | "super_admin";
 
 export default function Navbar() {
+  const router = useRouter();
   const [role, setRole] = useState<UserRole>("guest");
   const [fullName, setFullName] = useState("");
 
@@ -43,6 +45,9 @@ export default function Navbar() {
     setFullName("");
 
     window.dispatchEvent(new Event("eventpass-role-change"));
+
+    router.push("/");
+    router.refresh();
   };
 
   const isLoggedIn = role !== "guest";
@@ -121,6 +126,10 @@ export default function Navbar() {
 
         {isLoggedIn && (
           <>
+            <Link href="/profile">
+              <Button type="text">Profilim</Button>
+            </Link>
+
             <span style={{ color: "var(--app-muted)" }}>
               {fullName || role}
             </span>

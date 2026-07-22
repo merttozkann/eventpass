@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { hashPassword } from "../src/lib/password";
 
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL,
@@ -18,7 +19,7 @@ async function main() {
     data: {
       fullName: "Super Admin",
       email: "super@example.com",
-      password: "123456",
+      password: hashPassword("123456"),
       role: "SUPER_ADMIN",
     },
   });
@@ -27,7 +28,7 @@ async function main() {
     data: {
       fullName: "Admin Kullanıcı",
       email: "admin@example.com",
-      password: "123456",
+      password: hashPassword("123456"),
       role: "ADMIN",
     },
   });
@@ -36,7 +37,7 @@ async function main() {
     data: {
       fullName: "Normal Kullanıcı",
       email: "user@example.com",
-      password: "123456",
+      password: hashPassword("123456"),
       role: "USER",
     },
   });
@@ -45,7 +46,7 @@ async function main() {
     data: {
       fullName: "Ahmet Yılmaz",
       email: "ahmet@example.com",
-      password: "123456",
+      password: hashPassword("123456"),
       role: "USER",
     },
   });

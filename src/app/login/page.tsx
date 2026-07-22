@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { App as AntdApp, Button, Card, Form, Input } from "antd";
 import Link from "next/link";
@@ -76,7 +76,13 @@ export default function LoginPage() {
     >
       <Card style={{ width: "100%", maxWidth: 430, borderRadius: 16 }}>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <h1 style={{ fontSize: 32, marginBottom: 8, color: "var(--app-text)" }}>
+          <h1
+            style={{
+              fontSize: 32,
+              marginBottom: 8,
+              color: "var(--app-text)",
+            }}
+          >
             EventPass
           </h1>
 
@@ -94,7 +100,7 @@ export default function LoginPage() {
               { type: "email", message: "Geçerli bir e-posta giriniz." },
             ]}
           >
-            <Input placeholder="user@example.com" />
+            <Input placeholder="ornek@mail.com" />
           </Form.Item>
 
           <Form.Item
@@ -109,15 +115,7 @@ export default function LoginPage() {
             Giriş Yap
           </Button>
         </Form>
-<<<<<<< HEAD
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> c34f777 (Şifre hashleme sistemi eklendi)
-=======
-
->>>>>>> 4fb3f36 (Şifre hashleme sistemi eklendi)
         <div style={{ textAlign: "center", marginTop: 16 }}>
           Hesabın yok mu? <Link href="/register">Kayıt ol</Link>
         </div>
