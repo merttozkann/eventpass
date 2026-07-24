@@ -1,6 +1,14 @@
 "use client";
 
-import { App as AntdApp, Button, Popconfirm, Space, Table, Tag } from "antd";
+import {
+  App as AntdApp,
+  Button,
+  Popconfirm,
+  Space,
+  Table,
+  Tag,
+  Tooltip,
+} from "antd";
 import type { TableProps } from "antd";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -12,6 +20,7 @@ export type AdminEventRow = {
   eventDate: string;
   capacity: number;
   registrationCount: number;
+  eventDateRaw: string;
 };
 
 type AdminEventsTableProps = {
@@ -23,6 +32,7 @@ export default function AdminEventsTable({
 }: AdminEventsTableProps) {
   const { message } = AntdApp.useApp();
   const [events, setEvents] = useState<AdminEventRow[]>(initialEvents);
+
   useEffect(() => {
     setEvents(initialEvents);
   }, [initialEvents]);
@@ -38,9 +48,12 @@ export default function AdminEventsTable({
     console.log("Silme isteği userId:", userId);
     console.log("Silinecek event id:", id);
 
-    const response = await fetch(`/api/admin/events/${id}?createdById=${userId}`, {
-      method: "DELETE",
-    });
+    const response = await fetch(
+      `/api/admin/events/${id}?createdById=${userId}`,
+      {
+        method: "DELETE",
+      }
+    );
 
     const data = await response.json();
 
@@ -88,31 +101,54 @@ export default function AdminEventsTable({
     {
       title: "İşlemler",
       key: "actions",
-      render: (_, record) => (
-        <Space orientation="horizontal">
-          <Link href={`/events/${record.id}`}>
-            <Button>Detay</Button>
-          </Link>
+      render: (_, record) => {
+        const isPastEvent = new Date(record.eventDateRaw) < new Date();
 
-          <Link href={`/admin/events/${record.id}/participants`}>
-            <Button>Katılımcılar</Button>
-          </Link>
+        return (
+          <Space orientation="horizontal">
+            <Link href={`/events/${record.id}`}>
+              <Button>Detay</Button>
+            </Link>
 
-          <Link href={`/admin/events/${record.id}/edit`}>
-            <Button type="primary">Düzenle</Button>
-          </Link>
+            <Link href={`/admin/events/${record.id}/participants`}>
+              <Button>Katılımcılar</Button>
+            </Link>
 
-          <Popconfirm
-            title="Etkinliği sil"
-            description="Bu etkinliği silmek istediğine emin misin?"
-            okText="Evet"
-            cancelText="Vazgeç"
-            onConfirm={() => handleDelete(record.id)}
-          >
-            <Button danger>Sil</Button>
-          </Popconfirm>
-        </Space>
-      ),
+            <Tooltip
+              title={
+                isPastEvent
+                  ? "Geçmiş etkinlikler düzenlenemez."
+                  : ""
+              }
+            >
+              <Link
+                href={
+                  isPastEvent
+                    ? "#"
+                    : `/admin/events/${record.id}/edit`
+                }
+              >
+                <Button
+                  type="primary"
+                  disabled={isPastEvent}
+                >
+                  Düzenle
+                </Button>
+              </Link>
+            </Tooltip>
+
+            <Popconfirm
+              title="Etkinliği sil"
+              description="Bu etkinliği silmek istediğine emin misin?"
+              okText="Evet"
+              cancelText="Vazgeç"
+              onConfirm={() => handleDelete(record.id)}
+            >
+              <Button danger>Sil</Button>
+            </Popconfirm>
+          </Space>
+        );
+      },
     },
   ];
 

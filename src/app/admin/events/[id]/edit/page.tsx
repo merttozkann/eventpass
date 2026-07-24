@@ -42,6 +42,7 @@ export default function EditEventPage() {
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [isPastEvent, setIsPastEvent] = useState(false);
 
   useEffect(() => {
     async function fetchEvent() {
@@ -61,6 +62,13 @@ export default function EditEventPage() {
 
         if (!response.ok) {
           setNotFound(true);
+          return;
+        }
+
+        const eventDate = new Date(data.event.eventDate);
+
+        if (eventDate < new Date()) {
+          setIsPastEvent(true);
           return;
         }
 
@@ -152,6 +160,33 @@ export default function EditEventPage() {
             extra={
               <Link href="/admin/events">
                 <Button type="primary">Etkinliklere Dön</Button>
+              </Link>
+            }
+          />
+        </main>
+      </RoleGuard>
+    );
+  }
+
+  if (isPastEvent) {
+    return (
+      <RoleGuard allowedRoles={["admin"]}>
+        <main
+          style={{
+            minHeight: "calc(100vh - 68px)",
+            backgroundColor: "var(--app-bg)",
+            padding: "48px 24px",
+          }}
+        >
+          <Result
+            status="403"
+            title="Geçmiş etkinlik düzenlenemez"
+            subTitle="Etkinlik tarihi geçtiği için düzenleme yapılamaz."
+            extra={
+              <Link href="/admin/events">
+                <Button type="primary">
+                  Etkinliklere Dön
+                </Button>
               </Link>
             }
           />
